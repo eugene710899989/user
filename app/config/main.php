@@ -12,26 +12,16 @@ return [
     'basePath' => dirname(__DIR__),
     'controllerNamespace' => 'app\controllers',
     'bootstrap' => ['log'],
-    'modules' => [
-        'home' => [
-            'class' => 'app\modules\home\home',
-        ],
-    ],
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-backend',
-        ],
-        'user' => [
-            'identityClass' => 'common\models\User',
-            'enableAutoLogin' => true,
-            'identityCookie' => ['name' => '_identity-backend', 'httpOnly' => true],
         ],
         'session' => [
             // this is the name of the session cookie used for login on the backend
             'name' => 'app',
         ],
         'log' => [
-            'traceLevel' => YII_DEBUG ? 3 : 0,
+            'traceLevel' =>  3,
             'targets' => [
                 [
                     'class' => 'yii\log\FileTarget',
@@ -42,6 +32,9 @@ return [
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
+//        'debug'=>[
+//            'class'=>'yii/yii/Module'
+//        ],
         'master' => [
             'class' => 'yii\db\Connection',
             'dsn' => 'mysql:host=localhost:3306;dbname=master',

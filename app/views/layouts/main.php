@@ -4,13 +4,14 @@
 /* @var $content string */
 
 use app\assets\AppAsset;
+use common\models\CommonModel;
 use yii\helpers\Html;
 use yii\bootstrap\Nav;
 use yii\bootstrap\NavBar;
 use yii\widgets\Breadcrumbs;
 use common\widgets\Alert;
-
 AppAsset::register($this);
+
 ?>
 <?php $this->beginPage() ?>
 <!DOCTYPE html>
@@ -22,6 +23,15 @@ AppAsset::register($this);
     <?= Html::csrfMetaTags() ?>
     <title><?= Html::encode($this->title) ?></title>
     <?php $this->head() ?>
+    <link rel="stylesheet" href="/assets/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" href="/assets/layer/skin/layer.css">
+    <link rel="stylesheet" href="/assets/summernote/summernote.css">
+    <link rel="stylesheet" href="/assets/summernote/summernote-bs4.css">
+    <link rel="shortcut icon" href="/assets/ico/favicon.png">
+    <script src="/assets/js/jquery-3.2.1.min.js"></script>
+    <script src="/assets/layer/layer.min.js"></script>
+    <script src="/assets/bootstrap/js/bootstrap.js"></script>
+
 </head>
 <body>
 <?php $this->beginBody() ?>
@@ -29,7 +39,7 @@ AppAsset::register($this);
 <div class="wrap">
     <?php
     NavBar::begin([
-        'brandLabel' => 'My Company',
+        'brandLabel' => 'Email Plat',
         'brandUrl' => Yii::$app->homeUrl,
         'options' => [
             'class' => 'navbar-inverse navbar-fixed-top',
@@ -38,9 +48,10 @@ AppAsset::register($this);
     $menuItems = [
         ['label' => 'Home', 'url' => ['/site/index']],
     ];
-    if (Yii::$app->user->isGuest) {
+    if (!CommonModel::getUser()) {
         $menuItems[] = ['label' => 'Login', 'url' => ['/site/login']];
     } else {
+        $menuItems[] = ['label' => 'Tpl', 'url' => ['/site/tpl']];
         $menuItems[] = '<li>'
             . Html::beginForm(['/site/logout'], 'post')
             . Html::submitButton(
@@ -66,15 +77,13 @@ AppAsset::register($this);
     </div>
 </div>
 
-<footer class="footer">
-    <div class="container">
-        <p class="pull-left">&copy; My Company <?= date('Y') ?></p>
-
-        <p class="pull-right"><?= Yii::powered() ?></p>
-    </div>
-</footer>
-
 <?php $this->endBody() ?>
+<?php if (!empty($this->context->script_names)) {
+    foreach ($this->context->script_names as $s_name) {
+        echo '<script src="' . $s_name . '"></script>';
+    }
+} ?>
 </body>
+
 </html>
 <?php $this->endPage() ?>

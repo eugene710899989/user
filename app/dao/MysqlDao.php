@@ -11,7 +11,6 @@ class MysqlDao extends ActiveRecord
 
     public function saveOne($id, $info, $table, $sign = false)
     {
-        $info = $this->getSign($info, $table);
         $res = $this->command()->update($table, $info, 'id=:id', array(':id' => $id))->execute();
         /*  if (!$sign) {
               $this->createSign($table, "id='$id'");
@@ -22,7 +21,6 @@ class MysqlDao extends ActiveRecord
 
     public function addOne($info, $table)
     {
-        $info = $this->getSign($info, $table);
         $this->command()->insert($table, $info)->execute();
         $id = $this->getDb()->getLastInsertID();
         //$this->createSign($table, "id='$id'");
@@ -161,7 +159,6 @@ class MysqlDao extends ActiveRecord
 
     public function saveOneWhere($info, $where, $table)
     {
-        $info = $this->getSign($info, $table);
         $where = self::filterWhere($where);
         $res = $this->command()->update($table, $info, $where)->execute();
         // $this->createSign($table, $where);
@@ -240,7 +237,6 @@ class MysqlDao extends ActiveRecord
         return $info;
     }
 
-    //����sql��ѯ����
     private static function filterWhere($where)
     {
         if (!is_array($where)) {
@@ -249,78 +245,6 @@ class MysqlDao extends ActiveRecord
         return $where;
     }
 
-    //д������ָ��
-    private function createSign($table, $where)
-    {
-        $scanTables = CdoAdminDao::getInstance()->getWhereList('time_scan_config', 'valid_state=1 and type=2');
-        $tableArr = ArrayHelper::getColumn($scanTables, 'tb_name');
-        $signArr = ArrayHelper::map($scanTables, 'tb_name', 'secret_item');
-        $moduleArr = ArrayHelper::map($scanTables, 'tb_name', 'description');
-        $iv = 'coredata';
-        if (in_array($table, $tableArr)) {
-            $info = $this->getWhereList($table, $where, 'id,' . $signArr[$table]);
-            if ($info) {
-                $alertInfo = '';
-                foreach ($info as $item) {
-                    $itemStr = implode('', $item);
-                    $signStr = md5(base64_encode($itemStr . $iv));
-                    $this->saveOne($item['id'], ['sign' => $signStr], $table, true);
-                    $alertInfo .= '<tr><td>' . Yii::$app->session['userInfo']['real_name'] . '</td><td>' . Yii::$app->session['userInfo']['user_id'] . '</td><td>' . $moduleArr[$table] . '</td><td>' . $item['id'] . '</td><td>' . date('Y-m-d H:i:s') . '</td></tr>';
-                }
-                $alertInfo = '<table border="3"><tr><th>����</th><th>����</th><th>����ģ��</th><th>Ԫ��ID</th><th>����ʱ��</th></tr>' . $alertInfo . '</table>';
-                $roleIds = CdoAdminDao::getInstance()->getWhereList('user_role', "user_id='" . Yii::$app->params['operator_id'] . "' and valid_state=1", 'role_id');
-                $roleIds = ArrayHelper::getColumn($roleIds, 'role_id');
-                if (in_array(1, $roleIds) && get_cfg_var('custom_env') == 'pro') {
-                    $sendToPerson = CommonModel::getDictArrByKey('sensitive_info_accepter');
-                    if ($sendToPerson) {
-                        foreach ($sendToPerson as $accepter) {
-                            $emailInfo = [
-                                'address' => $accepter,
-                                'body' => $alertInfo,
-                                'subject' => '��������Ա�����澯',
-                            ];
-                            CurlServiceDao::post(Yii::$app->params['normalEmailPath'], $emailInfo, 'innerApi');
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    //生成数据指纹
-    private function getSign($info,$table){
-        $scanTables = CdoAdminDao::getInstance()->getWhereList('time_scan_config', 'valid_state=1 and type=2');
-        $tableArr = ArrayHelper::getColumn($scanTables, 'tb_name');
-        $signArr = ArrayHelper::map($scanTables, 'tb_name', 'secret_item');
-        $moduleArr = ArrayHelper::map($scanTables, 'tb_name', 'description');
-        $iv = 'coredata';
-        if (in_array($table, $tableArr)) {
-            if ($info) {
-                $alertInfo = '';
-                $itemStr = implode('', $info);
-                $signStr = md5(base64_encode($itemStr . $iv));
-                $info['sign'] = $signStr;
-                $alertInfo .= '<tr><td>' . Yii::$app->session['userInfo']['real_name'] . '</td><td>' . Yii::$app->session['userInfo']['user_id'] . '</td><td>' . $moduleArr[$table] . '</td><td>' . $item['id'] . '</td><td>' . date('Y-m-d H:i:s') . '</td></tr>';
-                $alertInfo = '<table border="3"><tr><th>姓名</th><th>工号</th><th>操作模块</th><th>元素ID</th><th>操作时间</th></tr>' . $alertInfo . '</table>';
-                $roleIds = CdoAdminDao::getInstance()->getWhereList('user_role', "user_id='" . Yii::$app->params['operator_id'] . "' and valid_state=1", 'role_id');
-                $roleIds = ArrayHelper::getColumn($roleIds, 'role_id');
-                if (in_array(1, $roleIds) && get_cfg_var('custom_env') == 'pro') {
-                    $sendToPerson = CommonModel::getDictArrByKey('sensitive_info_accepter');
-                    if ($sendToPerson) {
-                        foreach ($sendToPerson as $accepter) {
-                            $emailInfo = [
-                                'address' => $accepter,
-                                'body' => $alertInfo,
-                                'subject' => '超级管理员操作告警',
-                            ];
-                            CurlServiceDao::post(Yii::$app->params['normalEmailPath'], $emailInfo, 'innerApi');
-                        }
-                    }
-                }
-            }
-        }
-        return $info;
-    }
 
 
 }

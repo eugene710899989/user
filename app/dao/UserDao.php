@@ -7,17 +7,28 @@
  */
 namespace app\dao;
 
+use common\models\CommonModel;
 use Yii;
+use yii\base\Component;
+use yii\base\InvalidConfigException;
+use yii\base\InvalidValueException;
 use yii\base\NotSupportedException;
+use yii\web\Cookie;
+use yii\web\ForbiddenHttpException;
 use yii\web\IdentityInterface;
+use yii\web\UserEvent;
 
-class UserDao extends MasterDao implements IdentityInterface
+class UserDao extends MasterDao
 {
     public static $table = 'user';
     public static $command = array();
     public static $_instance;
     public $password_hash;
-    public $auth_key;
+
+    private $_access = [];
+    private $_identity = false;
+
+
     const STATUS_DELETED = 0;
     const STATUS_ACTIVE = 10;
 
@@ -53,82 +64,14 @@ class UserDao extends MasterDao implements IdentityInterface
         return self::$dbname;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getId()
-    {
-        return $this->getPrimaryKey();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getAuthKey()
-    {
-        return $this->auth_key;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function validateAuthKey($authKey)
-    {
-        return $this->getAuthKey() === $authKey;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public static function findIdentity($id)
-    {
-        return UserDao::getInstance()->getOneMWhere(['id' => $id, 'status' => self::STATUS_ACTIVE], '', UserDao::tableName());
-    }
-
     public function validatePassword($password)
     {
         $this->setPassword($this->password);
         return Yii::$app->security->validatePassword($password, $this->password_hash);
     }
 
-    public static function findIdentityByAccessToken($token, $type = null)
-    {
-        throw new NotSupportedException('"findIdentityByAccessToken" is not implemented.');
-    }
-
-    /**
-     * Generates password hash from password and sets it to the model
-     *
-     * @param string $password
-     */
     public function setPassword($password)
     {
         $this->password_hash = Yii::$app->security->generatePasswordHash($password);
     }
-
-
-    /**
-     * Generates "remember me" authentication key
-     */
-    public function generateAuthKey()
-    {
-        $this->auth_key = Yii::$app->security->generateRandomString();
-    }
-
-    /**
-     * Generates new password reset token
-     */
-    public function generatePasswordResetToken()
-    {
-        $this->password_reset_token = Yii::$app->security->generateRandomString() . '_' . time();
-    }
-
-    /**
-     * Removes password reset token
-     */
-    public function removePasswordResetToken()
-    {
-        $this->password_reset_token = null;
-    }
-
 }
